@@ -85,13 +85,15 @@ export default function FinancialOverview() {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="card card-pad card-hover">
+        <div className="card card-pad card-hover animate-fade-up stagger-1">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-slate-400">Health Score</span>
-            <AlertTriangle className={`h-5 w-5 ${getHealthScoreColor(data?.healthScore || 0)}`} />
+            <div className="p-2 bg-primary-500/10 rounded-lg animate-glow-pulse">
+              <AlertTriangle className={`h-5 w-5 ${getHealthScoreColor(data?.healthScore || 0)}`} />
+            </div>
           </div>
           <div className="flex items-baseline space-x-2">
-            <span className={`text-3xl font-bold ${getHealthScoreColor(data?.healthScore || 0)}`}>
+            <span className={`text-3xl font-bold ${getHealthScoreColor(data?.healthScore || 0)} counter-pulse`}>
               {data?.healthScore || 0}
             </span>
             <span className="text-sm text-slate-500">/100</span>
@@ -101,32 +103,38 @@ export default function FinancialOverview() {
           </p>
         </div>
 
-        <div className="card card-pad card-hover">
+        <div className="card card-pad card-hover animate-fade-up stagger-2">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-slate-400">Monthly Income</span>
-            <TrendingUp className="h-5 w-5 text-success-400" />
+            <div className="p-2 bg-success-500/10 rounded-lg animate-glow-pulse">
+              <TrendingUp className="h-5 w-5 text-success-400" />
+            </div>
           </div>
-          <p className="text-3xl font-bold text-slate-50">
+          <p className="text-3xl font-bold text-slate-50 counter-pulse">
             ₹{data?.totalIncome?.toLocaleString('en-IN') || '0'}
           </p>
         </div>
 
-        <div className="card card-pad card-hover">
+        <div className="card card-pad card-hover animate-fade-up stagger-3">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-slate-400">Monthly Expenses</span>
-            <TrendingDown className="h-5 w-5 text-danger-400" />
+            <div className="p-2 bg-danger-500/10 rounded-lg animate-glow-pulse">
+              <TrendingDown className="h-5 w-5 text-danger-400" />
+            </div>
           </div>
-          <p className="text-3xl font-bold text-slate-50">
+          <p className="text-3xl font-bold text-slate-50 counter-pulse">
             ₹{data?.totalExpenses?.toLocaleString('en-IN') || '0'}
           </p>
         </div>
 
-        <div className="card card-pad card-hover">
+        <div className="card card-pad card-hover animate-fade-up stagger-4">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-slate-400">Savings</span>
-            <DollarSign className="h-5 w-5 text-primary-300" />
+            <div className="p-2 bg-primary-500/10 rounded-lg animate-glow-pulse">
+              <DollarSign className="h-5 w-5 text-primary-300" />
+            </div>
           </div>
-          <p className="text-3xl font-bold text-slate-50">
+          <p className="text-3xl font-bold text-slate-50 counter-pulse">
             ₹{data?.savings?.toLocaleString('en-IN') || '0'}
           </p>
         </div>
@@ -141,16 +149,23 @@ export default function FinancialOverview() {
             { label: 'Goals', value: data.healthBreakdown.goalScore, help: 'Average goal progress' },
             { label: 'Diversification', value: data.healthBreakdown.diversificationScore, help: 'Portfolio diversification' },
           ].map((item, idx) => (
-            <div key={idx} className="card p-4">
+            <div
+              key={idx}
+              className="card p-4 animate-fade-up card-hover"
+              style={{ animationDelay: `${100 + idx * 50}ms` }}
+            >
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-medium text-slate-400">{item.label}</span>
               </div>
               <div className="flex items-baseline space-x-2">
-                <span className="text-2xl font-bold text-slate-50">{Math.round(item.value)}</span>
+                <span className="text-2xl font-bold text-slate-50 counter-pulse">{Math.round(item.value)}</span>
                 <span className="text-xs text-slate-500">/100</span>
               </div>
-              <div className="mt-2 w-full bg-slate-800/70 rounded-full h-2">
-                <div className="bg-primary-400 h-2 rounded-full" style={{ width: `${Math.min(100, Math.max(0, item.value))}%` }} />
+              <div className="mt-2 w-full bg-slate-800/70 rounded-full h-2 overflow-hidden">
+                <div 
+                  className="bg-gradient-to-r from-primary-400 to-primary-600 h-2 rounded-full animate-slide-in-left" 
+                  style={{ width: `${Math.min(100, Math.max(0, item.value))}%` }} 
+                />
               </div>
               <p className="text-[11px] text-slate-500 mt-2">{item.help}</p>
             </div>

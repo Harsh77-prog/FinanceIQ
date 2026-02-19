@@ -38,7 +38,7 @@ export default function QuickActions() {
   ]
 
   return (
-    <div className="card card-pad card-hover">
+    <div className="card card-pad card-hover animate-fade-up">
       <h2 className="mb-5 text-lg font-semibold text-slate-50">
         Quick Actions
       </h2>
@@ -49,10 +49,12 @@ export default function QuickActions() {
             <button
               key={index}
               onClick={action.onClick}
-              className={`${action.color} relative overflow-hidden rounded-xl p-3 text-left text-xs text-white shadow-md transition hover:-translate-y-0.5 hover:shadow-xl sm:p-4`}
+              className={`${action.color} group relative overflow-hidden rounded-xl p-3 text-left text-xs text-white shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl sm:p-4 animate-fade-up`}
+              style={{ animationDelay: `${50 + index * 50}ms` }}
             >
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/15 via-white/5 to-transparent opacity-40" />
-              <Icon className="mb-1 h-5 w-5 sm:h-6 sm:w-6" />
+              <div className="absolute inset-0 bg-white/0 group-hover:bg-white/10 transition-colors duration-300" />
+              <Icon className="mb-1 h-5 w-5 sm:h-6 sm:w-6 transform transition-transform group-hover:scale-110" />
               <p className="mb-0.5 text-sm font-semibold sm:mb-1">
                 {action.label}
               </p>

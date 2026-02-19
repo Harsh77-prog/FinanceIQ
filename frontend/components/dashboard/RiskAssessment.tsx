@@ -60,40 +60,42 @@ export default function RiskAssessment() {
   }
 
   return (
-    <div className="card card-pad card-hover">
+    <div className="card card-pad card-hover animate-fade-up">
       <div className="flex items-center space-x-2 mb-6">
-        <Shield className="h-6 w-6 text-primary-300" />
+        <div className="p-2 bg-primary-500/10 rounded-lg animate-glow-pulse">
+          <Shield className="h-6 w-6 text-primary-300" />
+        </div>
         <h2 className="text-lg font-semibold text-slate-50">Risk Assessment</h2>
       </div>
 
       <div className="space-y-6">
-        <div>
+        <div className="animate-fade-up stagger-1">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-slate-400">Risk Tolerance Score</span>
-            <span className="text-2xl font-bold text-slate-50">{data?.riskScore || 0}/100</span>
+            <span className="text-2xl font-bold text-slate-50 counter-pulse">{data?.riskScore || 0}/100</span>
           </div>
-          <div className="w-full bg-slate-800/70 rounded-full h-3">
+          <div className="w-full bg-slate-800/70 rounded-full h-3 overflow-hidden">
             <div
-              className="bg-primary-400 h-3 rounded-full transition-all"
+              className="bg-gradient-to-r from-primary-400 to-primary-600 h-3 rounded-full transition-all duration-500 animate-slide-in-left"
               style={{ width: `${data?.riskScore || 0}%` }}
             ></div>
           </div>
         </div>
 
-        <div>
+        <div className="animate-fade-up stagger-2">
           <span className="text-sm font-medium text-slate-400 block mb-2">Risk Level</span>
-          <span className={`inline-block px-4 py-2 rounded-xl font-semibold ${getRiskColor(data?.riskLevel || '')}`}>
+          <span className={`inline-block px-4 py-2 rounded-xl font-semibold animate-scale-in ${getRiskColor(data?.riskLevel || '')}`}>
             {data?.riskLevel || 'Not Assessed'}
           </span>
         </div>
 
-        <div className="pt-4 border-t border-slate-800/70">
+        <div className="pt-4 border-t border-slate-800/70 animate-fade-up stagger-3">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-slate-400 flex items-center space-x-2">
-              <AlertCircle className="h-4 w-4" />
+              <AlertCircle className="h-4 w-4 animate-pulse-ring" />
               <span>Financial Stress Probability</span>
             </span>
-            <span className="text-lg font-bold text-danger-300">
+            <span className="text-lg font-bold text-danger-300 counter-pulse">
               {(data?.stressProbability || 0).toFixed(1)}%
             </span>
           </div>

@@ -54,8 +54,78 @@ body {
     @apply hover:-translate-y-0.5 hover:shadow-md;
   }
 
+  .card-hover-lg {
+    @apply transition duration-300 will-change-transform hover:scale-105;
+    @apply hover:shadow-lg hover:shadow-primary-500/20;
+  }
+
+  .card-interactive {
+    @apply cursor-pointer transition-all duration-300;
+    @apply hover:-translate-y-1 hover:shadow-glow-primary;
+  }
+
   .page-animate {
     @apply animate-fade-up;
+  }
+
+  /* Animated entrance variations */
+  .animate-slide-left {
+    @apply animate-slide-in-left;
+  }
+
+  .animate-slide-right {
+    @apply animate-slide-in-right;
+  }
+
+  .animate-scale {
+    @apply animate-scale-in;
+  }
+
+  /* Staggered animations */
+  .stagger-1 {
+    animation-delay: 50ms;
+  }
+
+  .stagger-2 {
+    animation-delay: 100ms;
+  }
+
+  .stagger-3 {
+    animation-delay: 150ms;
+  }
+
+  .stagger-4 {
+    animation-delay: 200ms;
+  }
+
+  .stagger-5 {
+    animation-delay: 250ms;
+  }
+
+  /* Glowing effect */
+  .glow-effect {
+    @apply animate-glow-pulse;
+  }
+
+  /* Shimmer skeleton loading */
+  .shimmer-bg {
+    @apply animate-shimmer bg-gradient-to-r from-slate-700 via-slate-600 to-slate-700;
+    background-size: 1000px 100%;
+  }
+
+  /* Smooth transitions for all interactive elements */
+  .smooth-transition {
+    @apply transition-all duration-300 ease-out;
+  }
+
+  /* Badge animations */
+  .badge-bounce {
+    @apply animate-bounce-subtle;
+  }
+
+  /* Number counter animation */
+  .counter-pulse {
+    @apply animate-glow-pulse;
   }
 
   .section-title {

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
 
@@ -93,7 +93,7 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
       )}
 
       {/* Google Sign-In Button */}
-      <div id="google-signin-button" className="flex justify-center p-2 bg-slate-800/40 rounded-xl border border-slate-700 hover:border-slate-600 transition">
+      <div id="google-signin-button" className="flex justify-center p-2 bg-slate-800/40 rounded-xl border border-slate-700 bg-red-300 hover:border-slate-600 transition">
         <div
           id="g_id_onload"
           data-client_id={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}
