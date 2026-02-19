@@ -99,7 +99,7 @@ function computeHealthScore({ savingsRate, emergencyMonths, debtRatio, goalProgr
   // Map raw metrics to 0..1 subscores
   const savingsScore = clamp01(savingsRate) // assume rate already fraction
   const emergencyScore = clamp01(emergencyMonths / 6) // 6+ months ideal
-  const debtScore = clamp01(1 - debtRatio) // lower is better
+  const debtScore = clamp01(1 / (1 + debtRatio)) // normalized: 0 = high debt, 1 = low debt (better curve)
   const goalScore = clamp01(goalProgress)
   const divScore = clamp01(diversificationScore)
 
@@ -235,7 +235,8 @@ async function getDashboardAnalytics(userId) {
 
   const { months: emergencyMonths } = await getEmergencyFundMonths(userId)
   const { totalDebt, totalAssets } = await getDebtAssets(userId)
-  const rawDebtRatio = totalAssets > 0 ? totalDebt / totalAssets : 1
+  // Better debt ratio: 0 = high debt, 1 = low/no debt (using debt-to-income ratio concept)
+  const rawDebtRatio = income > 0 ? totalDebt / income : totalDebt > 0 ? 1 : 0
   const { avgProgress: goalProgress } = await getGoalProgress(userId)
   const { score: diversificationScore } = await getDiversificationScore(userId)
 

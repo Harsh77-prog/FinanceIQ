@@ -73,39 +73,59 @@ router.get('/assets', async (req, res) => {
 })
 
 router.post('/assets', [
-  body('type').isString().trim().notEmpty(),
-  body('quantity').isFloat({ min: 0 }),
-  body('price').isFloat({ min: 0 }),
-  body('symbol').optional().isString().trim(),
-  body('purchase_date').optional().isISO8601().toDate(),
+  body('type').notEmpty().withMessage('Asset type is required').isString().trim(),
+  body('quantity').notEmpty().withMessage('Quantity is required'),
+  body('price').notEmpty().withMessage('Price is required'),
+  body('symbol').optional().trim(),
+  body('purchase_date').optional(),
 ], async (req, res) => {
   try {
-    if (!handleValidation(req, res)) return
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ message: 'Validation failed', errors: errors.array() })
+    }
+
     await ensureWealthTables()
     const userId = req.user.id
     const { type, symbol, quantity, price, purchase_date } = req.body
+    
+    // Parse and validate numbers
+    const qty = parseFloat(quantity)
+    const prc = parseFloat(price)
+    
+    if (isNaN(qty) || qty < 0) {
+      return res.status(400).json({ message: 'Quantity must be a valid number >= 0' })
+    }
+    if (isNaN(prc) || prc < 0) {
+      return res.status(400).json({ message: 'Price must be a valid number >= 0' })
+    }
+    
     const r = await pool.query(
       `INSERT INTO assets (user_id, type, symbol, quantity, price, purchase_date)
        VALUES ($1,$2,$3,$4,$5,$6)
        RETURNING *`,
-      [userId, type, symbol || null, quantity, price, purchase_date || null]
+      [userId, type, symbol || null, qty, prc, purchase_date || null]
     )
     res.status(201).json({ asset: r.rows[0] })
   } catch (e) {
     console.error('Create asset error:', e)
-    res.status(500).json({ message: 'Failed to create asset' })
+    res.status(500).json({ message: e.message || 'Failed to create asset' })
   }
 })
 
 router.put('/assets/:id', [
   body('type').optional().isString().trim(),
-  body('symbol').optional().isString().trim(),
-  body('quantity').optional().isFloat({ min: 0 }),
-  body('price').optional().isFloat({ min: 0 }),
-  body('purchase_date').optional().isISO8601().toDate(),
+  body('symbol').optional().trim(),
+  body('quantity').optional(),
+  body('price').optional(),
+  body('purchase_date').optional(),
 ], async (req, res) => {
   try {
-    if (!handleValidation(req, res)) return
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ message: 'Validation failed', errors: errors.array() })
+    }
+
     await ensureWealthTables()
     const userId = req.user.id
     const { id } = req.params
@@ -114,10 +134,40 @@ router.put('/assets/:id', [
     const fields = []
     const values = []
     let i = 1
-    for (const k of ['type','symbol','quantity','price','purchase_date']) {
-      if (updates[k] !== undefined) { fields.push(`${k} = $${i++}`); values.push(updates[k]) }
+    
+    if (updates.type !== undefined && updates.type !== '') {
+      fields.push(`type = $${i++}`)
+      values.push(updates.type)
     }
-    if (!fields.length) return res.status(400).json({ message: 'No fields to update' })
+    if (updates.symbol !== undefined && updates.symbol !== '') {
+      fields.push(`symbol = $${i++}`)
+      values.push(updates.symbol)
+    }
+    if (updates.quantity !== undefined && updates.quantity !== '') {
+      const qty = parseFloat(updates.quantity)
+      if (isNaN(qty) || qty < 0) {
+        return res.status(400).json({ message: 'Quantity must be a valid number >= 0' })
+      }
+      fields.push(`quantity = $${i++}`)
+      values.push(qty)
+    }
+    if (updates.price !== undefined && updates.price !== '') {
+      const prc = parseFloat(updates.price)
+      if (isNaN(prc) || prc < 0) {
+        return res.status(400).json({ message: 'Price must be a valid number >= 0' })
+      }
+      fields.push(`price = $${i++}`)
+      values.push(prc)
+    }
+    if (updates.purchase_date !== undefined && updates.purchase_date !== '') {
+      fields.push(`purchase_date = $${i++}`)
+      values.push(updates.purchase_date)
+    }
+
+    if (!fields.length) {
+      return res.status(400).json({ message: 'No fields to update' })
+    }
+
     fields.push('updated_at = CURRENT_TIMESTAMP')
     values.push(id, userId)
 
@@ -125,11 +175,13 @@ router.put('/assets/:id', [
       `UPDATE assets SET ${fields.join(', ')} WHERE id=$${i++} AND user_id=$${i++} RETURNING *`,
       values
     )
-    if (!r.rows.length) return res.status(404).json({ message: 'Asset not found' })
+    if (!r.rows.length) {
+      return res.status(404).json({ message: 'Asset not found' })
+    }
     res.json({ asset: r.rows[0] })
   } catch (e) {
     console.error('Update asset error:', e)
-    res.status(500).json({ message: 'Failed to update asset' })
+    res.status(500).json({ message: e.message || 'Failed to update asset' })
   }
 })
 
@@ -161,37 +213,61 @@ router.get('/liabilities', async (req, res) => {
 })
 
 router.post('/liabilities', [
-  body('type').isString().trim().notEmpty(),
-  body('amount').isFloat({ min: 0 }),
-  body('rate').optional().isFloat({ min: 0 }),
-  body('due_date').optional().isISO8601().toDate(),
+  body('type').notEmpty().withMessage('Liability type is required').isString().trim(),
+  body('amount').notEmpty().withMessage('Amount is required'),
+  body('rate').optional(),
+  body('due_date').optional(),
 ], async (req, res) => {
   try {
-    if (!handleValidation(req, res)) return
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ message: 'Validation failed', errors: errors.array() })
+    }
+
     await ensureWealthTables()
     const userId = req.user.id
     const { type, amount, rate, due_date } = req.body
+    
+    // Parse and validate amount
+    const amt = parseFloat(amount)
+    if (isNaN(amt) || amt < 0) {
+      return res.status(400).json({ message: 'Amount must be a valid number >= 0' })
+    }
+    
+    // Parse rate if provided
+    let parsedRate = null
+    if (rate !== undefined && rate !== null && rate !== '') {
+      parsedRate = parseFloat(rate)
+      if (isNaN(parsedRate) || parsedRate < 0) {
+        return res.status(400).json({ message: 'Interest rate must be a valid number >= 0' })
+      }
+    }
+    
     const r = await pool.query(
       `INSERT INTO liabilities (user_id, type, amount, rate, due_date)
        VALUES ($1,$2,$3,$4,$5)
        RETURNING *`,
-      [userId, type, amount, rate || null, due_date || null]
+      [userId, type, amt, parsedRate, due_date || null]
     )
     res.status(201).json({ liability: r.rows[0] })
   } catch (e) {
     console.error('Create liability error:', e)
-    res.status(500).json({ message: 'Failed to create liability' })
+    res.status(500).json({ message: e.message || 'Failed to create liability' })
   }
 })
 
 router.put('/liabilities/:id', [
   body('type').optional().isString().trim(),
-  body('amount').optional().isFloat({ min: 0 }),
-  body('rate').optional().isFloat({ min: 0 }),
-  body('due_date').optional().isISO8601().toDate(),
+  body('amount').optional(),
+  body('rate').optional(),
+  body('due_date').optional(),
 ], async (req, res) => {
   try {
-    if (!handleValidation(req, res)) return
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ message: 'Validation failed', errors: errors.array() })
+    }
+
     await ensureWealthTables()
     const userId = req.user.id
     const { id } = req.params
@@ -200,10 +276,36 @@ router.put('/liabilities/:id', [
     const fields = []
     const values = []
     let i = 1
-    for (const k of ['type','amount','rate','due_date']) {
-      if (updates[k] !== undefined) { fields.push(`${k} = $${i++}`); values.push(updates[k]) }
+    
+    if (updates.type !== undefined && updates.type !== '') {
+      fields.push(`type = $${i++}`)
+      values.push(updates.type)
     }
-    if (!fields.length) return res.status(400).json({ message: 'No fields to update' })
+    if (updates.amount !== undefined && updates.amount !== '') {
+      const amt = parseFloat(updates.amount)
+      if (isNaN(amt) || amt < 0) {
+        return res.status(400).json({ message: 'Amount must be a valid number >= 0' })
+      }
+      fields.push(`amount = $${i++}`)
+      values.push(amt)
+    }
+    if (updates.rate !== undefined && updates.rate !== '') {
+      const rt = parseFloat(updates.rate)
+      if (isNaN(rt) || rt < 0) {
+        return res.status(400).json({ message: 'Rate must be a valid number >= 0' })
+      }
+      fields.push(`rate = $${i++}`)
+      values.push(rt)
+    }
+    if (updates.due_date !== undefined && updates.due_date !== '') {
+      fields.push(`due_date = $${i++}`)
+      values.push(updates.due_date)
+    }
+    
+    if (!fields.length) {
+      return res.status(400).json({ message: 'No fields to update' })
+    }
+    
     fields.push('updated_at = CURRENT_TIMESTAMP')
     values.push(id, userId)
 
@@ -211,11 +313,13 @@ router.put('/liabilities/:id', [
       `UPDATE liabilities SET ${fields.join(', ')} WHERE id=$${i++} AND user_id=$${i++} RETURNING *`,
       values
     )
-    if (!r.rows.length) return res.status(404).json({ message: 'Liability not found' })
+    if (!r.rows.length) {
+      return res.status(404).json({ message: 'Liability not found' })
+    }
     res.json({ liability: r.rows[0] })
   } catch (e) {
     console.error('Update liability error:', e)
-    res.status(500).json({ message: 'Failed to update liability' })
+    res.status(500).json({ message: e.message || 'Failed to update liability' })
   }
 })
 

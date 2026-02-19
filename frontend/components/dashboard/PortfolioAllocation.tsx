@@ -7,7 +7,16 @@ import { TrendingUp, Shield } from 'lucide-react'
 
 interface PortfolioData {
   riskLevel: string
-  allocation: {
+  riskScore: number
+  volatility: number
+  totalValue: number
+  currentAllocation: {
+    equity: number
+    debt: number
+    gold: number
+    liquid: number
+  }
+  targetAllocation: {
     equity: number
     debt: number
     gold: number
@@ -51,11 +60,11 @@ export default function PortfolioAllocation() {
     )
   }
 
-  const chartData = data?.allocation ? [
-    { name: 'Equity', value: data.allocation.equity, color: COLORS.equity },
-    { name: 'Debt', value: data.allocation.debt, color: COLORS.debt },
-    { name: 'Gold', value: data.allocation.gold, color: COLORS.gold },
-    { name: 'Liquid', value: data.allocation.liquid, color: COLORS.liquid },
+  const chartData = data?.currentAllocation ? [
+    { name: 'Equity', value: data.currentAllocation.equity, color: COLORS.equity },
+    { name: 'Debt', value: data.currentAllocation.debt, color: COLORS.debt },
+    { name: 'Gold', value: data.currentAllocation.gold, color: COLORS.gold },
+    { name: 'Liquid', value: data.currentAllocation.liquid, color: COLORS.liquid },
   ] : []
 
   const getRiskColor = (level: string) => {
@@ -85,7 +94,7 @@ export default function PortfolioAllocation() {
         )}
       </div>
 
-      {chartData.length > 0 ? (
+      {chartData.length > 0 && data.totalValue > 0 ? (
         <div className="space-y-6">
           <ResponsiveContainer width="100%" height={250}>
             <PieChart>
@@ -123,6 +132,10 @@ export default function PortfolioAllocation() {
             ))}
           </div>
 
+          <div className="pt-4 border-t border-slate-800/70 text-sm text-slate-300">
+            <span className="font-medium">Total Value:</span> ₹{data.totalValue?.toLocaleString('en-IN')}
+          </div>
+
           {data?.recommendation && (
             <div className="pt-4 border-t border-slate-800/70">
               <div className="flex items-start space-x-2">
@@ -137,7 +150,7 @@ export default function PortfolioAllocation() {
         </div>
       ) : (
         <div className="text-center py-8 text-slate-400">
-          <p>Complete risk assessment to see portfolio allocation</p>
+          <p>Add assets and savings to see portfolio allocation</p>
         </div>
       )}
     </div>

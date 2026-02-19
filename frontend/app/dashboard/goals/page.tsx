@@ -26,6 +26,9 @@ export default function GoalsPage() {
   const [loadingGoals, setLoadingGoals] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null)
+  const [showContributeModal, setShowContributeModal] = useState(false)
+  const [contributingGoal, setContributingGoal] = useState<Goal | null>(null)
+  const [contributionAmount, setContributionAmount] = useState('')
 
   const [formData, setFormData] = useState({
     name: '',
@@ -84,6 +87,37 @@ export default function GoalsPage() {
     if (!confirm('Delete this goal?')) return
     await api.delete(`/goals/${id}`)
     fetchGoals()
+  }
+
+  const handleContribute = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!contributingGoal) return
+
+    try {
+      const amount = parseFloat(contributionAmount)
+      if (isNaN(amount) || amount <= 0) {
+        alert('Please enter a valid amount')
+        return
+      }
+
+      await api.post(`/goals/${contributingGoal.id}/contribute`, {
+        amount,
+      })
+
+      setShowContributeModal(false)
+      setContributingGoal(null)
+      setContributionAmount('')
+      fetchGoals()
+    } catch (err) {
+      console.error(err)
+      alert('Failed to contribute to goal')
+    }
+  }
+
+  const openContributeModal = (goal: Goal) => {
+    setContributingGoal(goal)
+    setContributionAmount('')
+    setShowContributeModal(true)
   }
 
   const handleEdit = (goal: Goal) => {
@@ -209,6 +243,14 @@ export default function GoalsPage() {
                   {/* ACTIONS */}
                   <div className="flex gap-4 mt-4 pt-4 border-t border-slate-800/70">
                     <button
+                      onClick={() => openContributeModal(goal)}
+                      className="flex items-center gap-1 text-success-300 hover:text-success-200 text-sm"
+                    >
+                      <Plus size={16} />
+                      Contribute
+                    </button>
+
+                    <button
                       onClick={() => handleEdit(goal)}
                       className="flex items-center gap-1 text-primary-200 hover:text-primary-100 text-sm"
                     >
@@ -310,6 +352,56 @@ export default function GoalsPage() {
                   <button
                     type="button"
                     onClick={() => setShowModal(false)}
+                    className="btn-ghost flex-1"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* ================= CONTRIBUTE MODAL ================= */}
+        {showContributeModal && contributingGoal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="card card-pad w-full max-w-md shadow-lg">
+              <h2 className="text-xl font-bold mb-2">
+                Contribute to {contributingGoal.name}
+              </h2>
+              <p className="text-slate-400 text-sm mb-4">
+                Current: ₹{contributingGoal.current_amount.toLocaleString('en-IN')} / ₹{contributingGoal.target_amount.toLocaleString('en-IN')}
+              </p>
+
+              <form
+                onSubmit={handleContribute}
+                className="space-y-4"
+              >
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="Contribution Amount"
+                  required
+                  value={contributionAmount}
+                  onChange={(e) =>
+                    setContributionAmount(e.target.value)
+                  }
+                  className="input"
+                />
+
+                <div className="flex gap-3">
+                  <button className="btn-primary flex-1">
+                    Add Funds
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowContributeModal(false)
+                      setContributingGoal(null)
+                      setContributionAmount('')
+                    }}
                     className="btn-ghost flex-1"
                   >
                     Cancel

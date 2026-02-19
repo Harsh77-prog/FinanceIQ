@@ -236,35 +236,56 @@ def predict_stress_probability(debt_to_income, savings_rate, emi_burden, expense
     return prob * 100
 
 def run_monte_carlo(initial_amount, monthly_contribution, years, expected_return, volatility):
-    """Run Monte Carlo simulation"""
+    """Run Monte Carlo simulation using Geometric Brownian Motion"""
     np.random.seed(42)
     n_simulations = 10000
-    monthly_return = expected_return / 12
-    monthly_volatility = volatility / np.sqrt(12)
+    n_months = years * 12
+    
+    # Properly convert annual to monthly rates using continuous compounding
+    # This accounts for the fact that returns compound geometrically, not linearly
+    monthly_drift = (expected_return - 0.5 * volatility**2) / 12
+    monthly_vol = volatility / np.sqrt(12)
     
     final_amounts = []
     
     for _ in range(n_simulations):
         amount = initial_amount
-        for month in range(years * 12):
-            # Random return for this month
-            monthly_random_return = np.random.normal(monthly_return, monthly_volatility)
-            amount = amount * (1 + monthly_random_return) + monthly_contribution
+        
+        for month in range(n_months):
+            # Generate random shock from standard normal distribution
+            random_shock = np.random.normal(0, 1)
+            
+            # Calculate monthly return using log-normal distribution (GBM)
+            # This ensures returns follow a more realistic distribution
+            log_return = monthly_drift + monthly_vol * random_shock
+            monthly_multiplier = np.exp(log_return)
+            
+            # Apply return and add monthly contribution
+            amount = amount * monthly_multiplier + monthly_contribution
         
         final_amounts.append(amount)
     
     final_amounts = np.array(final_amounts)
     
+    # Calculate statistics
+    worst_case = np.percentile(final_amounts, 5)
+    best_case = np.percentile(final_amounts, 95)
+    median = np.median(final_amounts)
+    mean = np.mean(final_amounts)
+    std_dev = np.std(final_amounts)
+    
     return {
-        "initialAmount": initial_amount,
-        "monthlyContribution": monthly_contribution,
+        "initialAmount": round(initial_amount, 2),
+        "monthlyContribution": round(monthly_contribution, 2),
         "years": years,
         "simulations": n_simulations,
-        "worstCase": round(np.percentile(final_amounts, 5), 2),
-        "bestCase": round(np.percentile(final_amounts, 95), 2),
-        "median": round(np.median(final_amounts), 2),
-        "mean": round(np.mean(final_amounts), 2),
-        "stdDev": round(np.std(final_amounts), 2)
+        "worstCase": round(worst_case, 2),
+        "bestCase": round(best_case, 2),
+        "median": round(median, 2),
+        "mean": round(mean, 2),
+        "stdDev": round(std_dev, 2),
+        "expectedAnnualReturn": round(expected_return * 100, 2),
+        "volatility": round(volatility * 100, 2)
     }
 
 if __name__ == "__main__":

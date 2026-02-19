@@ -127,33 +127,24 @@ router.get('/analysis', async (req, res) => {
   }
 })
 
-// Get portfolio allocation recommendation
+// Get portfolio allocation recommendation - returns ACTUAL current allocation + target + risk
 router.get('/allocation', async (req, res) => {
   try {
     const userId = req.user.id
 
-    // Get latest risk assessment
-    const riskResult = await pool.query(
-      'SELECT risk_level FROM risk_assessments WHERE user_id = $1 ORDER BY assessment_date DESC LIMIT 1',
-      [userId]
-    )
-
-    const riskLevel = riskResult.rows[0]?.risk_level || 'Balanced'
-
-    // Get recommended allocation based on risk level
-    const allocation = getPortfolioAllocation(riskLevel)
-
-    // Save recommendation
-    await pool.query(
-      `INSERT INTO portfolio_allocations (user_id, equity_percentage, debt_percentage, gold_percentage, liquid_percentage)
-       VALUES ($1, $2, $3, $4, $5)`,
-      [userId, allocation.equity, allocation.debt, allocation.gold, allocation.liquid]
-    )
+    // Get current and target allocations with risk score
+    const current = await getCurrentAllocation(userId, pool)
+    const target = await getTargetAllocation(userId, pool)
+    const risk = computeRiskScore(current.weights)
 
     res.json({
-      riskLevel,
-      allocation,
-      recommendation: getRecommendationText(riskLevel),
+      currentAllocation: current.weights,
+      targetAllocation: target,
+      totalValue: current.totals.total,
+      riskLevel: risk.level,
+      riskScore: risk.score,
+      volatility: risk.annualVolatility,
+      recommendation: getRecommendationText(risk.level),
     })
   } catch (error) {
     console.error('Get allocation error:', error)

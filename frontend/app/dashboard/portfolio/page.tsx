@@ -39,6 +39,42 @@ export default function PortfolioPage() {
     if (!loading && !user) router.push('/')
   }, [user, loading, router])
 
+  /* ================= LOAD USER DATA ================= */
+  useEffect(() => {
+    if (user) {
+      loadUserPortfolioData()
+    }
+  }, [user])
+
+  const loadUserPortfolioData = async () => {
+    try {
+      // Get total current portfolio value (assets + savings combined)
+      const [assetsRes, savingsRes] = await Promise.all([
+        api.get('/portfolio/holdings'),
+        api.get('/savings'),
+      ])
+
+      let totalValue = assetsRes.data?.total || 0
+      const totalSavings = savingsRes.data?.total || 0
+
+      // Add savings to total portfolio value
+      totalValue += totalSavings
+
+      // Estimate average monthly contribution (use 10% of current assets as default monthly)
+      const estimatedMonthly = Math.round(totalValue * 0.1)
+
+      // Pre-fill form with actual user data
+      setFormData((prev) => ({
+        ...prev,
+        initialAmount: totalValue > 0 ? Math.round(totalValue).toString() : '10000',
+        monthlyContribution: estimatedMonthly > 0 ? estimatedMonthly.toString() : '500',
+      }))
+    } catch (error) {
+      console.error('Failed to load portfolio data:', error)
+      // Keep defaults if fetch fails
+    }
+  }
+
   /* ================= SIMULATION ================= */
   const runSimulation = async () => {
     setLoadingSimulation(true)

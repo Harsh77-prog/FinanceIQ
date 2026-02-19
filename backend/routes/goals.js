@@ -213,4 +213,47 @@ router.get('/projections/all', async (req, res) => {
   }
 })
 
+// Add contribution to goal
+router.post('/:id/contribute', [
+  body('amount').isFloat({ min: 0 }),
+], async (req, res) => {
+  try {
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ message: 'Validation failed', errors: errors.array() })
+    }
+
+    const userId = req.user.id
+    const { id } = req.params
+    const { amount } = req.body
+
+    // Get current goal
+    const goalResult = await pool.query(
+      'SELECT * FROM goals WHERE id = $1 AND user_id = $2',
+      [id, userId]
+    )
+
+    if (goalResult.rows.length === 0) {
+      return res.status(404).json({ message: 'Goal not found' })
+    }
+
+    const goal = goalResult.rows[0]
+    const newAmount = Math.min(
+      parseFloat(goal.current_amount) + parseFloat(amount),
+      parseFloat(goal.target_amount)
+    )
+
+    // Update goal with new amount
+    const result = await pool.query(
+      `UPDATE goals SET current_amount = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *`,
+      [newAmount, id]
+    )
+
+    res.json({ goal: result.rows[0], added: parseFloat(amount) })
+  } catch (error) {
+    console.error('Contribute to goal error:', error)
+    res.status(500).json({ message: 'Failed to contribute to goal' })
+  }
+})
+
 module.exports = router

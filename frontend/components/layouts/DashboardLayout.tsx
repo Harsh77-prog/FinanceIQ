@@ -12,6 +12,7 @@ import {
   LogOut,
   AlertCircle,
   Menu,
+  PiggyBank,
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -34,6 +35,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { href: '/dashboard/transactions', icon: BarChart3, label: 'Transactions' },
     { href: '/dashboard/goals', icon: Target, label: 'Goals' },
+    { href: '/dashboard/wealth', icon: PiggyBank, label: 'Savings & Debts' },
     { href: '/dashboard/portfolio', icon: TrendingUp, label: 'Portfolio' },
     { href: '/dashboard/alerts', icon: AlertCircle, label: 'Risk Alerts' },
     { href: '/dashboard/settings', icon: Settings, label: 'Settings' },
