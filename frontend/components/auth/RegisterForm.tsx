@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { Mail, CheckCircle } from 'lucide-react'
 
 interface RegisterFormProps {
   onRegister: (email: string, password: string, name: string) => Promise<void>
@@ -14,7 +14,7 @@ export default function RegisterForm({ onRegister }: RegisterFormProps) {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const router = useRouter()
+  const [registrationSuccess, setRegistrationSuccess] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -34,12 +34,47 @@ export default function RegisterForm({ onRegister }: RegisterFormProps) {
 
     try {
       await onRegister(email, password, name)
-      router.push('/dashboard')
+      setRegistrationSuccess(true)
+      setName('')
+      setEmail('')
+      setPassword('')
+      setConfirmPassword('')
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Registration failed. Please try again.')
-    } finally {
       setLoading(false)
+      const status = err.response?.status
+      const message = err.response?.data?.message || ''
+
+      // Handle specific error cases
+      if (status === 400 && message.includes('already exists')) {
+        setError('❌ An account with this email already exists. Try signing in instead.')
+      } else if (status === 400 && message.includes('Validation failed')) {
+        setError('❌ Invalid input. Please check your email and password (min 6 characters).')
+      } else if (status === 400) {
+        setError(`❌ ${message}`)
+      } else if (err.code === 'ECONNREFUSED') {
+        setError('❌ Connection error. Please check your internet and try again.')
+      } else {
+        setError(message || '❌ Registration failed. Please try again.')
+      }
     }
+  }
+
+  if (registrationSuccess) {
+    return (
+      <div className="text-center py-6">
+        <Mail className="h-12 w-12 text-primary-400 mx-auto mb-4" />
+        <h3 className="text-lg font-semibold text-slate-50 mb-2">Account Created!</h3>
+        <p className="text-sm text-slate-400 mb-4">
+          We&apos;ve sent a verification email to your inbox. Please verify your email to get started.
+        </p>
+        <button
+          onClick={() => setRegistrationSuccess(false)}
+          className="text-xs text-primary-400 hover:text-primary-300 transition"
+        >
+          Back to Sign Up
+        </button>
+      </div>
+    )
   }
 
   return (
@@ -113,8 +148,9 @@ export default function RegisterForm({ onRegister }: RegisterFormProps) {
       <button
         type="submit"
         disabled={loading}
-        className="btn-primary w-full"
+        className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
       >
+        {loading && <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />}
         {loading ? 'Creating account...' : 'Sign Up'}
       </button>
     </form>

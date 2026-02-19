@@ -5,6 +5,7 @@ import { api } from '@/lib/api'
 import { DollarSign, TrendingUp, TrendingDown, AlertTriangle } from 'lucide-react'
 
 interface FinancialData {
+  hasData: boolean
   healthScore: number
   totalIncome: number
   totalExpenses: number
@@ -33,6 +34,7 @@ export default function FinancialOverview() {
     try {
       const response = await api.get('/analytics/dashboard')
       setData({
+        hasData: response.data.hasData,
         healthScore: response.data.healthScore,
         totalIncome: response.data.totals.income,
         totalExpenses: response.data.totals.expenses,
@@ -44,6 +46,7 @@ export default function FinancialOverview() {
       console.error('Failed to fetch financial data:', error)
       // Set default values on error
       setData({
+        hasData: false,
         healthScore: 0,
         totalIncome: 0,
         totalExpenses: 0,
@@ -64,6 +67,26 @@ export default function FinancialOverview() {
             <div className="h-8 bg-slate-800 rounded w-3/4"></div>
           </div>
         ))}
+      </div>
+    )
+  }
+
+  if (!data?.hasData) {
+    return (
+      <div className="space-y-6">
+        <div className="card card-pad text-center py-12">
+          <DollarSign className="h-12 w-12 text-slate-600 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-slate-50 mb-2">No Financial Data Yet</h3>
+          <p className="text-slate-400 mb-6">
+            Start by adding your income, expenses, debts, or savings to see your financial health score and insights.
+          </p>
+          <button
+            onClick={() => window.location.href = '/dashboard/transactions'}
+            className="btn-primary inline-block"
+          >
+            Add Your First Transaction
+          </button>
+        </div>
       </div>
     )
   }

@@ -8,6 +8,7 @@ interface User {
   id: string
   email: string
   name?: string
+  emailVerified?: boolean
 }
 
 interface AuthContextType {
@@ -15,6 +16,7 @@ interface AuthContextType {
   loading: boolean
   login: (email: string, password: string) => Promise<void>
   register: (email: string, password: string, name: string) => Promise<void>
+  googleLogin: (token: string, userData: User) => void
   logout: () => void
 }
 
@@ -48,9 +50,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const register = async (email: string, password: string, name: string) => {
-    const response = await api.post('/auth/register', { email, password, name })
-    Cookies.set('token', response.data.token, { expires: 7 })
-    setUser(response.data.user)
+    // Registration doesn't return token since user is not verified yet
+    await api.post('/auth/register', { email, password, name })
+    // Don't set user or token - user needs to verify email first
+  }
+
+  const googleLogin = (token: string, userData: User) => {
+    Cookies.set('token', token, { expires: 7 })
+    setUser(userData)
   }
 
   const logout = () => {
@@ -59,7 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, register, googleLogin, logout }}>
       {children}
     </AuthContext.Provider>
   )

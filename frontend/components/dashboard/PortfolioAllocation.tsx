@@ -94,7 +94,7 @@ export default function PortfolioAllocation() {
         )}
       </div>
 
-      {chartData.length > 0 && data.totalValue > 0 ? (
+      {chartData.length > 0 && data && data.totalValue > 0 ? (
         <div className="space-y-6">
           <ResponsiveContainer width="100%" height={250}>
             <PieChart>

@@ -20,6 +20,10 @@ export default function DashboardPage() {
     if (!loading && !user) {
       router.push('/')
     }
+    // If user is not verified, redirect back to home
+    if (!loading && user && !user.emailVerified) {
+      router.push('/')
+    }
   }, [user, loading, router])
 
   if (loading) {
@@ -30,7 +34,7 @@ export default function DashboardPage() {
     )
   }
 
-  if (!user) return null
+  if (!user || !user.emailVerified) return null
 
   return (
     <DashboardLayout>

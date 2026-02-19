@@ -41,7 +41,9 @@ export default function NetWorthTrend() {
       {loading ? (
         <div className="h-64 bg-slate-800/60 rounded-xl animate-pulse"></div>
       ) : trend.length === 0 ? (
-        <div className="text-sm text-slate-400">Not enough data to display trend.</div>
+        <div className="text-center py-12 text-slate-400">
+          <p className="text-sm">Add transactions and track your net worth over time</p>
+        </div>
       ) : (
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">

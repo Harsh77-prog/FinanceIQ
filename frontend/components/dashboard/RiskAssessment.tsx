@@ -5,9 +5,10 @@ import { api } from '@/lib/api'
 import { Shield, AlertCircle } from 'lucide-react'
 
 interface RiskData {
-  riskScore: number
-  riskLevel: 'Conservative' | 'Balanced' | 'Aggressive'
-  stressProbability: number
+  hasData?: boolean
+  riskScore: number | null
+  riskLevel: 'Conservative' | 'Balanced' | 'Aggressive' | null
+  stressProbability: number | null
 }
 
 export default function RiskAssessment() {
@@ -42,6 +43,22 @@ export default function RiskAssessment() {
       <div className="card card-pad animate-pulse">
         <div className="h-6 bg-slate-800 rounded w-1/3 mb-4"></div>
         <div className="h-32 bg-slate-800 rounded-xl"></div>
+      </div>
+    )
+  }
+
+  if (!data?.hasData || data?.riskScore === null) {
+    return (
+      <div className="card card-pad card-hover animate-fade-up">
+        <div className="flex items-center space-x-2 mb-6">
+          <div className="p-2 bg-primary-500/10 rounded-lg animate-glow-pulse">
+            <Shield className="h-6 w-6 text-primary-300" />
+          </div>
+          <h2 className="text-lg font-semibold text-slate-50">Risk Assessment</h2>
+        </div>
+        <p className="text-slate-400 text-center py-8">
+          Add financial data to see risk assessment
+        </p>
       </div>
     )
   }

@@ -93,6 +93,19 @@ router.get('/risk-assessment', async (req, res) => {
     const totalSavings = parseFloat(savingsResult.rows[0].total) || 0
     const totalDebt = parseFloat(debtResult.rows[0].total) || 0
 
+    // Check if user has any financial data
+    const hasData = totalIncome > 0 || totalExpenses > 0 || totalDebt > 0 || totalSavings > 0
+
+    // If no data, return empty state response
+    if (!hasData) {
+      return res.json({
+        hasData: false,
+        riskScore: null,
+        riskLevel: null,
+        stressProbability: null,
+      })
+    }
+
     // Calculate age (if not provided, estimate from account age)
     const age = profileAge || calculateAgeFromAccount(user.created_at)
 
@@ -108,7 +121,7 @@ router.get('/risk-assessment', async (req, res) => {
         debt: totalDebt,
       })
 
-      res.json(mlResponse.data)
+      res.json({ ...mlResponse.data, hasData: true })
     } catch (mlError) {
       // Fallback to basic calculation if ML service unavailable
       console.warn('ML service unavailable, using fallback calculation')
@@ -117,6 +130,7 @@ router.get('/risk-assessment', async (req, res) => {
       const stressProbability = calculateStressProbability(totalDebt, totalIncome, totalExpenses)
 
       res.json({
+        hasData: true,
         riskScore,
         riskLevel,
         stressProbability,

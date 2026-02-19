@@ -235,6 +235,10 @@ async function getDashboardAnalytics(userId) {
 
   const { months: emergencyMonths } = await getEmergencyFundMonths(userId)
   const { totalDebt, totalAssets } = await getDebtAssets(userId)
+  
+  // Check if user has any data
+  const hasData = income > 0 || expenses > 0 || totalDebt > 0 || totalAssets > 0
+  
   // Better debt ratio: 0 = high debt, 1 = low/no debt (using debt-to-income ratio concept)
   const rawDebtRatio = income > 0 ? totalDebt / income : totalDebt > 0 ? 1 : 0
   const { avgProgress: goalProgress } = await getGoalProgress(userId)
@@ -254,6 +258,7 @@ async function getDashboardAnalytics(userId) {
   const netWorth = await getNetWorth(userId)
 
   return {
+    hasData, // Flag indicating if user has any data
     healthScore: health.value,
     healthBreakdown: health.breakdown,
     period: { start: start30.toISOString().slice(0,10), end: now.toISOString().slice(0,10) },
