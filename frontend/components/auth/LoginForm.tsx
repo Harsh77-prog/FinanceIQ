@@ -93,22 +93,33 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
       )}
 
       {/* Google Sign-In Button */}
-      <div id="google-signin-button" className="flex justify-center p-2 bg-slate-800/40 rounded-xl border border-slate-700 bg-red-300 hover:border-slate-600 transition">
-        <div
-          id="g_id_onload"
-          data-client_id={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}
-          data-callback="handleGoogleSignIn"
-        />
-        <div
-          className="g_id_signin"
-          data-type="standard"
-          data-size="large"
-          data-theme="dark"
-          data-text="signin_with"
-          data-shape="rectangular"
-          data-logo_alignment="left"
-        />
-      </div>
+      <div
+  id="google-signin-button"
+  className="flex justify-center p-3 rounded-xl border border-slate-700 hover:border-slate-600 transition"
+>
+  {/* Google Config */}
+  <div
+    id="g_id_onload"
+    data-client_id={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}
+    data-callback="handleGoogleSignIn"
+    data-auto_prompt="false"
+  />
+
+  {/* Google Button */}
+  <div className="overflow-hidden rounded-lg">
+    <div
+      className="g_id_signin"
+      data-type="standard"
+      data-size="large"
+      data-theme="filled_black"
+      data-text="signin_with"
+      data-shape="rectangular"
+      data-logo_alignment="left"
+      data-width="280"
+    />
+  </div>
+</div>
+
 
       {/* Divider */}
       <div className="relative">
