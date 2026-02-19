@@ -144,7 +144,7 @@ router.post('/google', async (req, res) => {
     }
 
     // Check if user exists
-    const existingUser = await pool.query('SELECT id FROM users WHERE email = $1', [googleUser.email])
+    const existingUser = await pool.query('SELECT id, email, name FROM users WHERE email = $1', [googleUser.email])
 
     let user
     if (existingUser.rows.length > 0) {

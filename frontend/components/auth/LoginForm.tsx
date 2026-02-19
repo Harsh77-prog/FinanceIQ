@@ -2,7 +2,9 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import Cookies from 'js-cookie'
 import { api } from '@/lib/api'
+import { useAuth } from '@/hooks/useAuth'
 
 interface LoginFormProps {
   onLogin: (email: string, password: string) => Promise<void>
@@ -21,32 +23,10 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const router = useRouter()
+  const { login: authLogin } = useAuth()
 
-  useEffect(() => {
-    // Load Google Sign-In script
-    const script = document.createElement('script')
-    script.src = 'https://accounts.google.com/gsi/client'
-    script.async = true
-    script.defer = true
-    document.body.appendChild(script)
-
-    script.onload = () => {
-      if (window.google) {
-        window.google.accounts.id.initialize({
-          client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '',
-          callback: handleGoogleSignIn,
-        })
-      }
-    }
-
-    return () => {
-      if (document.body.contains(script)) {
-        document.body.removeChild(script)
-      }
-    }
-  }, [])
-
-  const handleGoogleSignIn = async (response: any) => {
+  // Make callback available globally for Google Sign-In
+  const handleGoogleSignIn = useCallback(async (response: any) => {
     setGoogleLoading(true)
     setError('')
 
@@ -55,10 +35,10 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
         idToken: response.credential,
       })
 
-      // Store token
-      localStorage.setItem('token', result.data.token)
-      localStorage.setItem('user', JSON.stringify(result.data.user))
-
+      // Store token in cookies (same as regular login)
+      Cookies.set('token', result.data.token, { expires: 7 })
+      
+      // Redirect to dashboard - the AuthProvider will fetch user data on load
       router.push('/dashboard')
     } catch (err: any) {
       const errorMsg = err.response?.data?.message || 'Google sign-in failed'
@@ -67,7 +47,48 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
     } finally {
       setGoogleLoading(false)
     }
-  }
+  }, [router])
+
+  useEffect(() => {
+    // Register callback on window for Google to access
+    (window as any).handleGoogleSignIn = handleGoogleSignIn
+    
+    // Load Google Sign-In script
+    const script = document.createElement('script')
+    script.src = 'https://accounts.google.com/gsi/client'
+    script.async = true
+    script.defer = true
+    document.body.appendChild(script)
+
+    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
+    if (!clientId) {
+      console.error('Missing NEXT_PUBLIC_GOOGLE_CLIENT_ID')
+      setError('Google Sign-In is not configured')
+    }
+
+    script.onload = () => {
+      try {
+        if (window.google && clientId) {
+          window.google.accounts.id.initialize({
+            client_id: clientId,
+            callback: handleGoogleSignIn,
+          })
+          window.google.accounts.id.renderButton(
+            document.getElementById('google-button'),
+            { theme: 'outline', size: 'large' }
+          )
+        }
+      } catch (err) {
+        console.error('Failed to initialize Google Sign-In:', err)
+      }
+    }
+
+    return () => {
+      if (document.body.contains(script)) {
+        document.body.removeChild(script)
+      }
+    }
+  }, [handleGoogleSignIn])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -94,31 +115,9 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
 
       {/* Google Sign-In Button */}
       <div
-  id="google-signin-button"
-  className="flex justify-center p-3 rounded-xl border border-slate-700 hover:border-slate-600 transition"
->
-  {/* Google Config */}
-  <div
-    id="g_id_onload"
-    data-client_id={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}
-    data-callback="handleGoogleSignIn"
-    data-auto_prompt="false"
-  />
-
-  {/* Google Button */}
-  <div className="overflow-hidden rounded-lg">
-    <div
-      className="g_id_signin"
-      data-type="standard"
-      data-size="large"
-      data-theme="filled_black"
-      data-text="signin_with"
-      data-shape="rectangular"
-      data-logo_alignment="left"
-      data-width="280"
-    />
-  </div>
-</div>
+        id="google-button"
+        className="flex justify-center p-3 rounded-xl border border-slate-700 hover:border-slate-600 transition"
+      />
 
 
       {/* Divider */}
