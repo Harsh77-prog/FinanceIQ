@@ -3,15 +3,11 @@ const { Resend } = require("resend");
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 const emailService = {
-
   // ================= VERIFY EMAIL =================
   sendVerificationEmail: async (email, token, userName) => {
     try {
-      const frontendUrl =
-        process.env.FRONTEND_URL || "http://localhost:3000";
-
-      const verificationLink =
-        `${frontendUrl}/verify-email?token=${token}`;
+      const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+      const verificationLink = `${frontendUrl}/verify-email?token=${token}`;
 
       console.log("📧 Generating verification link:", verificationLink);
 
@@ -34,7 +30,8 @@ const emailService = {
       `;
 
       const response = await resend.emails.send({
-        from: "FinanceIQ <onboarding@resend.dev>",
+        // Use your verified domain here
+        from: `FinanceIQ <no-reply@${process.env.VERIFIED_DOMAIN}>`,
         to: email,
         subject: "📧 Verify Your FinanceIQ Email",
         html,
@@ -42,7 +39,6 @@ const emailService = {
 
       console.log("✅ Verification email sent:", response.id);
       return true;
-
     } catch (error) {
       console.error("❌ Email Error:", error.message);
       return false;
@@ -52,11 +48,8 @@ const emailService = {
   // ================= RESET PASSWORD =================
   sendPasswordResetEmail: async (email, token, userName) => {
     try {
-      const frontendUrl =
-        process.env.FRONTEND_URL || "http://localhost:3000";
-
-      const resetLink =
-        `${frontendUrl}/reset-password?token=${token}`;
+      const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+      const resetLink = `${frontendUrl}/reset-password?token=${token}`;
 
       console.log("📧 Generating reset link:", resetLink);
 
@@ -80,7 +73,8 @@ const emailService = {
       `;
 
       const response = await resend.emails.send({
-        from: "FinanceIQ <onboarding@resend.dev>",
+        // Use your verified domain here
+        from: `FinanceIQ <no-reply@${process.env.VERIFIED_DOMAIN}>`,
         to: email,
         subject: "🔐 Reset Your FinanceIQ Password",
         html,
@@ -88,7 +82,6 @@ const emailService = {
 
       console.log("✅ Reset email sent:", response.id);
       return true;
-
     } catch (error) {
       console.error("❌ Email Error:", error.message);
       return false;
