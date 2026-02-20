@@ -1,97 +1,99 @@
-const nodemailer = require('nodemailer')
+const { Resend } = require("resend");
 
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 587,
-  secure: false, // MUST be false for TLS
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASSWORD,
-  },
-  tls: {
-    rejectUnauthorized: false,
-  },
-  connectionTimeout: 15000, // prevents Render timeout
-  greetingTimeout: 10000,
-  socketTimeout: 15000,
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-transporter.verify((error) => {
-  if (error) {
-    console.log('❌ Email Setup Error:', error.message)
-  } else {
-    console.log('✅ Email Service Ready')
-  }
-})
 const emailService = {
+
+  // ================= VERIFY EMAIL =================
   sendVerificationEmail: async (email, token, userName) => {
     try {
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000'
-      const verificationLink = `${frontendUrl}/verify-email?token=${token}`
+      const frontendUrl =
+        process.env.FRONTEND_URL || "http://localhost:3000";
 
-      console.log('📧 Generating verification link:', verificationLink)
-      const mailOptions = {
-      from: `"FinanceIQ Support" <${process.env.EMAIL_USER}>`,
-      to: email,
-        subject: '📧 Verify Your FinanceIQ Email',
-      html: `
-          <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-            <h2>Welcome ${userName}!</h2>
-            <p>Click the button below to verify your email address. This link expires in 24 hours.</p>
-            <a href="${verificationLink}" style="background:#3b82f6; color:white; padding:12px 24px; text-decoration:none; border-radius:5px; display:inline-block; font-weight:bold;">
-              Verify Email
-            </a>
-            <p style="margin-top: 20px; color: #666; font-size: 12px;">
-              Or copy and paste this link: <br/>
-              ${verificationLink}
-            </p>
-          </div>
-      `,
-      }
+      const verificationLink =
+        `${frontendUrl}/verify-email?token=${token}`;
 
-      await transporter.sendMail(mailOptions)
-      console.log('✅ Verification email sent to:', email)
-      return true
+      console.log("📧 Generating verification link:", verificationLink);
+
+      const html = `
+        <div style="font-family:sans-serif;padding:20px;border:1px solid #eee;border-radius:10px;">
+          <h2>Welcome ${userName}!</h2>
+          <p>Click below to verify your email. Link expires in 24 hours.</p>
+
+          <a href="${verificationLink}"
+            style="background:#3b82f6;color:white;padding:12px 24px;
+            text-decoration:none;border-radius:5px;display:inline-block;font-weight:bold;">
+            Verify Email
+          </a>
+
+          <p style="margin-top:20px;font-size:12px;color:#666;">
+            Or copy this link:<br/>
+            ${verificationLink}
+          </p>
+        </div>
+      `;
+
+      const response = await resend.emails.send({
+        from: "FinanceIQ <onboarding@resend.dev>",
+        to: email,
+        subject: "📧 Verify Your FinanceIQ Email",
+        html,
+      });
+
+      console.log("✅ Verification email sent:", response.id);
+      return true;
+
     } catch (error) {
-      console.error('❌ Email Error:', error.message)
-      throw error
+      console.error("❌ Email Error:", error.message);
+      return false;
     }
   },
 
+  // ================= RESET PASSWORD =================
   sendPasswordResetEmail: async (email, token, userName) => {
     try {
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000'
-      const resetLink = `${frontendUrl}/reset-password?token=${token}`
+      const frontendUrl =
+        process.env.FRONTEND_URL || "http://localhost:3000";
 
-      console.log('📧 Generating reset link:', resetLink)
+      const resetLink =
+        `${frontendUrl}/reset-password?token=${token}`;
 
-      const mailOptions = {
-      from: `"FinanceIQ Support" <${process.env.EMAIL_USER}>`,
-      to: email,
-        subject: '🔐 Reset Your FinanceIQ Password',
-      html: `
-          <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-            <h2>Password Reset Request</h2>
-            <p>Hi ${userName},</p>
-            <p>Click the button below to reset your password. This link expires in 1 hour.</p>
-            <a href="${resetLink}" style="background:#3b82f6; color:white; padding:12px 24px; text-decoration:none; border-radius:5px; display:inline-block; font-weight:bold;">
-              Reset Password
-            </a>
-            <p style="margin-top: 20px; color: #666; font-size: 12px;">
-              Or copy and paste: <br/>
-              ${resetLink}
-            </p>
-          </div>
-      `,
-      }
+      console.log("📧 Generating reset link:", resetLink);
 
-      await transporter.sendMail(mailOptions)
-      console.log('✅ Reset email sent to:', email)
-      return true
+      const html = `
+        <div style="font-family:sans-serif;padding:20px;border:1px solid #eee;border-radius:10px;">
+          <h2>Password Reset Request</h2>
+          <p>Hi ${userName},</p>
+          <p>Click below to reset your password. Link expires in 1 hour.</p>
+
+          <a href="${resetLink}"
+            style="background:#3b82f6;color:white;padding:12px 24px;
+            text-decoration:none;border-radius:5px;display:inline-block;font-weight:bold;">
+            Reset Password
+          </a>
+
+          <p style="margin-top:20px;font-size:12px;color:#666;">
+            Or copy this link:<br/>
+            ${resetLink}
+          </p>
+        </div>
+      `;
+
+      const response = await resend.emails.send({
+        from: "FinanceIQ <onboarding@resend.dev>",
+        to: email,
+        subject: "🔐 Reset Your FinanceIQ Password",
+        html,
+      });
+
+      console.log("✅ Reset email sent:", response.id);
+      return true;
+
     } catch (error) {
-      console.error('❌ Email Error:', error.message)
-      throw error
+      console.error("❌ Email Error:", error.message);
+      return false;
     }
-  }
-}
-module.exports = emailService
+  },
+};
+
+module.exports = emailService;
