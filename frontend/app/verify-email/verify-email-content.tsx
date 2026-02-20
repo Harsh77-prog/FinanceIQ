@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { api } from '@/lib/api'
 import Cookies from 'js-cookie'
@@ -10,11 +10,14 @@ export default function VerifyEmailContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const token = searchParams.get('token')
-  
+  const verificationAttempted = useRef(false)
+
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
   const [message, setMessage] = useState('')
 
   useEffect(() => {
+    if (verificationAttempted.current) return
+
     const verifyEmail = async () => {
       if (!token) {
         setStatus('error')
@@ -22,20 +25,23 @@ export default function VerifyEmailContent() {
         return
       }
 
+      verificationAttempted.current = true
+
       try {
+        console.log('🔍 Attempting to verify token:', token.substring(0, 10) + '...')
         const response = await api.post('/auth/verify-email', { token })
-        
-        // Store token
+        console.log('✅ Verification successful:', response.data)
+
         Cookies.set('token', response.data.token, { expires: 7 })
-        
+
         setStatus('success')
         setMessage('Email verified successfully! Redirecting to dashboard...')
-        
-        // Redirect after 2 seconds
+
         setTimeout(() => {
           router.push('/dashboard')
         }, 2000)
       } catch (error: any) {
+        console.error('❌ Verification failed:', error.response?.data)
         setStatus('error')
         const errorMessage = error.response?.data?.message || 'Failed to verify email'
         setMessage(errorMessage)
@@ -68,7 +74,7 @@ export default function VerifyEmailContent() {
 
           {status === 'error' && (
             <>
-              <AlertCircle className="h-12 w-12 text-danger-400 mx-auto mb-4" />
+              <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
               <h1 className="text-2xl font-bold text-slate-50 mb-2">Verification Failed</h1>
               <p className="text-slate-400 mb-6">{message}</p>
               <button

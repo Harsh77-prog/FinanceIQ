@@ -1,174 +1,67 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useState } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
-import { AlertCircle, CheckCircle, Lock } from 'lucide-react'
-
 export default function ResetPasswordContent() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const token = searchParams.get('token')
-  
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
-  const [loading, setLoading] = useState(false)
 
-  useEffect(() => {
-    if (!token) {
-      setError('No password reset token provided')
-    }
-  }, [token])
-
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const token = searchParams.get('token')
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!token) return setError('Invalid reset link')
+    if (password !== confirmPassword) return setError('Passwords do not match')
+    setLoading(true)
     setError('')
 
-    // Validate passwords
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters')
-      return
-    }
-
-    if (password !== confirmPassword) {
-      setError('Passwords do not match')
-      return
-    }
-
-    setLoading(true)
-
     try {
-      await api.post('/auth/reset-password', {
-        token,
-        password,
-      })
-
+      await api.post('/auth/reset-password', { token, password })
       setSuccess(true)
-      setPassword('')
-      setConfirmPassword('')
-
-      // Redirect after 2 seconds
-      setTimeout(() => {
-        router.push('/')
-      }, 2000)
+      setTimeout(() => router.push('/'), 3000)
     } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Failed to reset password'
-      setError(errorMessage)
+      setError(err.response?.data?.message || 'Something went wrong')
     } finally {
       setLoading(false)
     }
   }
 
-  if (!token) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-950 px-4">
-        <div className="max-w-md w-full">
-          <div className="card card-pad text-center">
-            <AlertCircle className="h-12 w-12 text-danger-400 mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-slate-50 mb-2">Invalid Link</h1>
-            <p className="text-slate-400 mb-6">Password reset link is invalid or missing.</p>
-            <button
-              onClick={() => router.push('/')}
-              className="btn-primary w-full"
-            >
-              Back to Login
-            </button>
+  if (success) return (
+    <div className="card text-center p-8 bg-slate-900 border-emerald-500/30">
+      <h2 className="text-2xl font-bold text-emerald-400 mb-2">Success!</h2>
+      <p className="text-slate-300">Your password has been reset. Redirecting to login...</p>
           </div>
-        </div>
-      </div>
     )
-  }
-
-  if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-950 px-4">
-        <div className="max-w-md w-full">
-          <div className="card card-pad text-center">
-            <CheckCircle className="h-12 w-12 text-emerald-400 mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-slate-50 mb-2">Password Reset Successfully!</h1>
-            <p className="text-slate-400 mb-4">Your password has been updated. Redirecting to login...</p>
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto" />
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-950 px-4">
-      <div className="max-w-md w-full">
-        <div className="card card-pad">
-          <div className="flex items-center justify-center h-12 w-12 rounded-xl bg-primary-500/20 mx-auto mb-4">
-            <Lock className="h-6 w-6 text-primary-400" />
-          </div>
-
-          <h1 className="text-2xl font-bold text-slate-50 text-center mb-2">Reset Password</h1>
-          <p className="text-slate-400 text-center mb-6">Enter your new password below</p>
-
+    <div className="max-w-md mx-auto mt-20 p-6 bg-slate-900 rounded-2xl border border-slate-800">
+      <h2 className="text-2xl font-bold text-white mb-6">Create New Password</h2>
+      {error && <div className="p-3 mb-4 bg-red-500/10 text-red-400 rounded-lg">{error}</div>}
           <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
-              <div className="p-3 bg-danger-500/10 border border-danger-500/20 text-danger-200 rounded-xl text-sm flex items-gap-2">
-                <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                <span>{error}</span>
-              </div>
-            )}
-
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-slate-300 mb-1">
-                New Password
-              </label>
-              <input
-                id="password"
-                type="password"
+        <input 
+          type="password" 
+          placeholder="New Password" 
+          className="input w-full" 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                required
-                className="input"
-                placeholder="••••••••"
-                minLength={6}
+          required 
               />
-            </div>
-
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-300 mb-1">
-                Confirm Password
-              </label>
-              <input
-                id="confirmPassword"
-                type="password"
+        <input 
+          type="password" 
+          placeholder="Confirm New Password" 
+          className="input w-full" 
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                className="input"
-                placeholder="••••••••"
-                minLength={6}
+          required 
               />
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn-primary w-full"
-            >
-              {loading ? 'Resetting...' : 'Reset Password'}
-            </button>
+        <button disabled={loading} className="btn-primary w-full py-3">
+          {loading ? 'Updating...' : 'Reset Password'}
+        </button>
           </form>
-
-          <div className="mt-4 pt-4 border-t border-slate-700">
-            <p className="text-sm text-slate-400 text-center">
-              Remember your password?{' '}
-              <button
-                onClick={() => router.push('/')}
-                className="text-primary-400 hover:text-primary-300 transition"
-              >
-                Sign In
-              </button>
-            </p>
           </div>
-        </div>
-      </div>
-    </div>
   )
 }

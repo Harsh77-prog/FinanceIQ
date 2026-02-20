@@ -14,9 +14,10 @@ interface User {
 interface AuthContextType {
   user: User | null
   loading: boolean
+  initialized: boolean
   login: (email: string, password: string) => Promise<void>
   register: (email: string, password: string, name: string) => Promise<void>
-  googleLogin: (token: string, userData: User) => void
+  googleLogin: (token: string, userData: any) => void
   logout: () => void
 }
 
@@ -25,6 +26,17 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const [initialized, setInitialized] = useState(false)
+
+  // Helper to normalize user data from backend
+  const normalizeUser = (userData: any): User | null => {
+    if (!userData) return null
+    return {
+      ...userData,
+      // Map snake_case from DB to camelCase for Frontend
+      emailVerified: userData.emailVerified ?? userData.email_verified ?? false
+    }
+  }
 
   useEffect(() => {
     checkAuth()
@@ -32,32 +44,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const checkAuth = async () => {
     const token = Cookies.get('token')
-    if (token) {
-      try {
-        const response = await api.get('/auth/me')
-        setUser(response.data.user)
-      } catch (error) {
-        Cookies.remove('token')
-      }
+
+    if (!token) {
+      setLoading(false)
+      setInitialized(true)
+      return
     }
-    setLoading(false)
+
+    try {
+      const res = await api.get('/auth/me')
+      setUser(normalizeUser(res.data.user)) // Use helper
+    } catch {
+      Cookies.remove('token')
+      setUser(null)
+    } finally {
+      setLoading(false)
+      setInitialized(true)
+    }
   }
 
   const login = async (email: string, password: string) => {
-    const response = await api.post('/auth/login', { email, password })
-    Cookies.set('token', response.data.token, { expires: 7 })
-    setUser(response.data.user)
+    const res = await api.post('/auth/login', { email, password })
+    Cookies.set('token', res.data.token, { expires: 7 })
+    setUser(normalizeUser(res.data.user)) // Use helper
   }
 
   const register = async (email: string, password: string, name: string) => {
-    // Registration doesn't return token since user is not verified yet
     await api.post('/auth/register', { email, password, name })
-    // Don't set user or token - user needs to verify email first
   }
 
-  const googleLogin = (token: string, userData: User) => {
+  const googleLogin = (token: string, userData: any) => {
     Cookies.set('token', token, { expires: 7 })
-    setUser(userData)
+    setUser(normalizeUser(userData)) // Use helper
   }
 
   const logout = () => {
@@ -66,7 +84,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, googleLogin, logout }}>
+    <AuthContext.Provider
+      value={{ user, loading, initialized, login, register, googleLogin, logout }}
+    >
       {children}
     </AuthContext.Provider>
   )
@@ -74,8 +94,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth() {
   const context = useContext(AuthContext)
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider')
-  }
+  if (!context) throw new Error('useAuth must be used within AuthProvider')
   return context
 }

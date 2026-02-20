@@ -13,28 +13,26 @@ import NetWorthTrend from '@/components/dashboard/NetWorthTrend'
 import AlertsRecommendations from '@/components/dashboard/AlertsRecommendations'
 
 export default function DashboardPage() {
-  const { user, loading } = useAuth()
+  const { user, loading, initialized } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.push('/')
+    if (initialized && !loading && !user) {
+      router.replace('/')
     }
-    // If user is not verified, redirect back to home
-    if (!loading && user && !user.emailVerified) {
-      router.push('/')
-    }
-  }, [user, loading, router])
+  }, [user, loading, initialized, router])
 
-  if (loading) {
+  if (!initialized || loading || !user) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-950">
+        <div className="relative">
+             <div className="h-16 w-16 rounded-full border-4 border-slate-800"></div>
+             <div className="absolute top-0 h-16 w-16 rounded-full border-t-4 border-primary-500 animate-spin"></div>
+        </div>
+        <p className="mt-4 text-slate-400 text-sm">Loading your financial workspace...</p>
       </div>
     )
   }
-
-  if (!user || !user.emailVerified) return null
 
   return (
     <DashboardLayout>
@@ -42,20 +40,25 @@ export default function DashboardPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-slate-50">Dashboard</h1>
-            <p className="text-slate-400 mt-1">Welcome back, {user.name || user.email}</p>
+            <p className="text-slate-400 mt-1">
+              Welcome back, {user.name || user.email}
+            </p>
           </div>
         </div>
 
         <FinancialOverview />
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <InsightsCard />
           <NetWorthTrend />
           <AlertsRecommendations />
         </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <RiskAssessment />
           <QuickActions />
         </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <PortfolioAllocation />
         </div>
