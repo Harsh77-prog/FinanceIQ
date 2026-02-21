@@ -1,12 +1,11 @@
 require("dotenv").config();
-const MailerSend = require("mailersend").default;
+const { MailerSend } = require("mailersend");  // <- fixed import
 
 const mailerSend = new MailerSend({
   apiKey: process.env.MAILERSEND_API_KEY,
 });
 
 const emailService = {
-  // ================= VERIFY EMAIL =================
   sendVerificationEmail: async (email, token, userName) => {
     const verificationLink = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
 
@@ -40,7 +39,6 @@ const emailService = {
     }
   },
 
-  // ================= RESET PASSWORD =================
   sendPasswordResetEmail: async (email, token, userName) => {
     const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
 
