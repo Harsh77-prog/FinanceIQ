@@ -1,33 +1,29 @@
 require("dotenv").config();
-const { MailerSend } = require("mailersend");
+const { MailerSend, EmailParams } = require("mailersend");
 
-// Debug: check MailerSend import
-console.log("MailerSend:", MailerSend);
+// Debug import
+console.log("MailerSend:", MailerSend, "EmailParams:", EmailParams);
 
 if (!process.env.MAILERSEND_API_KEY) {
-  console.error("❌ MAILERSEND_API_KEY is not set in .env");
+  console.error("❌ MAILERSEND_API_KEY is missing in .env");
 }
 
 const mailerSend = new MailerSend({
   apiKey: process.env.MAILERSEND_API_KEY,
 });
 
-// Debug: check initialized client
-console.log("MailerSend client initialized:", mailerSend ? true : false);
+
 
 const emailService = {
   sendVerificationEmail: async (email, token, userName) => {
-    console.log("Sending verification email to:", email);
-    console.log("Frontend URL:", process.env.FRONTEND_URL);
-    console.log("Email from:", process.env.EMAIL_FROM);
-
     const verificationLink = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
+    console.log("Sending verification email to:", email);
 
-    const payload = {
-      from: { email: process.env.EMAIL_FROM },
-      to: [{ email }],
-      subject: "📧 Verify Your FinanceIQ Email",
-      html: `
+    const emailParams = new EmailParams()
+      .setFrom(process.env.EMAIL_FROM)
+      .setTo(email)
+      .setSubject("📧 Verify Your FinanceIQ Email")
+      .setHtml(`
         <div style="font-family:sans-serif;padding:20px;border:1px solid #eee;border-radius:10px;">
           <h2>Welcome ${userName}!</h2>
           <p>Click below to verify your email. Link expires in 24 hours.</p>
@@ -41,13 +37,10 @@ const emailService = {
             ${verificationLink}
           </p>
         </div>
-      `,
-    };
-
-    console.log("Payload:", payload);
+      `);
 
     try {
-      const response = await mailerSend.emails.send(payload);
+      const response = await mailerSend.send(emailParams);
       console.log("✅ Verification email sent:", response);
       return true;
     } catch (error) {
@@ -57,15 +50,14 @@ const emailService = {
   },
 
   sendPasswordResetEmail: async (email, token, userName) => {
+    const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
     console.log("Sending password reset email to:", email);
 
-    const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
-
-    const payload = {
-      from: { email: process.env.EMAIL_FROM },
-      to: [{ email }],
-      subject: "🔐 Reset Your FinanceIQ Password",
-      html: `
+    const emailParams = new EmailParams()
+      .setFrom(process.env.EMAIL_FROM)
+      .setTo(email)
+      .setSubject("🔐 Reset Your FinanceIQ Password")
+      .setHtml(`
         <div style="font-family:sans-serif;padding:20px;border:1px solid #eee;border-radius:10px;">
           <h2>Password Reset Request</h2>
           <p>Hi ${userName}, click below to reset your password:</p>
@@ -79,13 +71,10 @@ const emailService = {
             ${resetLink}
           </p>
         </div>
-      `,
-    };
-
-    console.log("Payload:", payload);
+      `);
 
     try {
-      const response = await mailerSend.emails.send(payload);
+      const response = await mailerSend.send(emailParams);
       console.log("✅ Reset email sent:", response);
       return true;
     } catch (error) {
