@@ -13,11 +13,7 @@ const PORT = process.env.PORT || 5000;
 /* ===============================
    DEBUG ENV (IMPORTANT)
 ================================ */
-console.log("EMAIL_USER:", process.env.EMAIL_USER);
-console.log(
-  "EMAIL_PASSWORD length:",
-  process.env.EMAIL_PASSWORD?.length
-);
+console.log("EMAIL_USER:", process.env.EMAIL_FROM);
 
 /* ===============================
    Middleware
