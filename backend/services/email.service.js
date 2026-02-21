@@ -1,20 +1,21 @@
 require("dotenv").config();
-const { MailerSend } = require("mailersend");  // <- fixed import
+const { MailerSend, EmailParams } = require("mailersend"); // <- new structure
 
 const mailerSend = new MailerSend({
   apiKey: process.env.MAILERSEND_API_KEY,
 });
 
 const emailService = {
+  // -------------------- Verification Email --------------------
   sendVerificationEmail: async (email, token, userName) => {
     const verificationLink = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
 
     try {
-      await mailerSend.emails.send({
-        from: { email: process.env.EMAIL_FROM },
-        to: [{ email }],
-        subject: "📧 Verify Your FinanceIQ Email",
-        html: `
+      const emailParams = new EmailParams()
+        .setFrom(process.env.EMAIL_FROM)
+        .setTo(email)
+        .setSubject("📧 Verify Your FinanceIQ Email")
+        .setHtml(`
           <div style="font-family:sans-serif;padding:20px;border:1px solid #eee;border-radius:10px;">
             <h2>Welcome ${userName}!</h2>
             <p>Click below to verify your email. Link expires in 24 hours.</p>
@@ -28,9 +29,9 @@ const emailService = {
               ${verificationLink}
             </p>
           </div>
-        `,
-      });
+        `);
 
+      await mailerSend.emails.send(emailParams);
       console.log("✅ Verification email sent");
       return true;
     } catch (error) {
@@ -39,15 +40,16 @@ const emailService = {
     }
   },
 
+  // -------------------- Password Reset Email --------------------
   sendPasswordResetEmail: async (email, token, userName) => {
     const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
 
     try {
-      await mailerSend.emails.send({
-        from: { email: process.env.EMAIL_FROM },
-        to: [{ email }],
-        subject: "🔐 Reset Your FinanceIQ Password",
-        html: `
+      const emailParams = new EmailParams()
+        .setFrom(process.env.EMAIL_FROM)
+        .setTo(email)
+        .setSubject("🔐 Reset Your FinanceIQ Password")
+        .setHtml(`
           <div style="font-family:sans-serif;padding:20px;border:1px solid #eee;border-radius:10px;">
             <h2>Password Reset Request</h2>
             <p>Hi ${userName}, click below to reset your password:</p>
@@ -61,9 +63,9 @@ const emailService = {
               ${resetLink}
             </p>
           </div>
-        `,
-      });
+        `);
 
+      await mailerSend.emails.send(emailParams);
       console.log("✅ Reset email sent");
       return true;
     } catch (error) {
